@@ -1,0 +1,19 @@
+# Локальный Jenkins для учебного проекта.
+# Запуск:  docker compose -f jenkins/docker-compose.yml up -d --build
+# Открыть: http://localhost:8080
+services:
+  jenkins:
+    build: .
+    container_name: jenkins
+    # root нужен только для доступа к /var/run/docker.sock в учебной среде;
+    # в продакшене используют отдельного агента или Docker-in-Docker с TLS.
+    user: root
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:

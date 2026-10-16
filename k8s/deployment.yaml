@@ -1,0 +1,57 @@
+# CD в Minikube (бонус).
+# Перед применением создайте секрет с токеном бота:
+#   kubectl create secret generic expense-bot-secret --from-literal=BOT_TOKEN=<ваш_токен>
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: expense-bot-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-bot
+  labels:
+    app: expense-bot
+spec:
+  # Бот работает через long polling: два экземпляра одновременно
+  # конфликтуют в Telegram API, поэтому 1 реплика и стратегия Recreate.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: expense-bot
+  template:
+    metadata:
+      labels:
+        app: expense-bot
+    spec:
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: expense-bot
+          image: mlkshknv/telegram-expense-tracker:latest
+          imagePullPolicy: Always
+          env:
+            - name: BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: expense-bot-secret
+                  key: BOT_TOKEN
+            - name: DB_PATH
+              value: /app/data/expenses.db
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: expense-bot-data
