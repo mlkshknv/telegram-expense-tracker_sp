@@ -73,3 +73,5 @@ docker run --rm -e BOT_TOKEN=<токен> -v expense-data:/app/data telegram-exp
 
 Бот работает, пока запущена программа на компьютере.
 Для постоянной доступности требуется размещение на сервере.
+
+##   Pipeline проверен в Jenkins.
